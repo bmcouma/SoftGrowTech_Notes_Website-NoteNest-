@@ -1,0 +1,165 @@
+/* ============================================================
+   NoteNest — animations.css
+   All keyframe definitions, transitions, and motion utilities.
+   ============================================================ */
+
+/* ---------- PAGE LOAD ---------- */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ---------- SIDEBAR ---------- */
+
+@keyframes sidebarIn {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes sidebarOut {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(-100%); opacity: 0; }
+}
+
+/* ---------- NOTE CARDS ---------- */
+
+@keyframes cardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cardDelete {
+  0%   { opacity: 1; transform: scale(1); max-height: 300px; margin-bottom: 1rem; }
+  50%  { opacity: 0; transform: scale(0.92) translateX(12px); }
+  100% { opacity: 0; max-height: 0; margin-bottom: 0; padding: 0; }
+}
+
+@keyframes cardPinPulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.18); }
+}
+
+/* ---------- MODAL ---------- */
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modalSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+}
+
+/* ---------- TOAST ---------- */
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+}
+
+/* ---------- CONFIRM DIALOG ---------- */
+
+@keyframes confirmPop {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- BRAND ---------- */
+
+@keyframes brandWrite {
+  from { opacity: 0; letter-spacing: -0.05em; }
+  to   { opacity: 1; letter-spacing: 0.04em; }
+}
+
+/* ---------- EMPTY STATE ---------- */
+
+@keyframes emptyFloat {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-7px); }
+}
+
+.empty-illustration {
+  animation: emptyFloat 3.5s ease-in-out infinite;
+}
+
+/* ---------- PIN STAR ANIMATION ---------- */
+
+.pin-btn.pinned svg {
+  animation: cardPinPulse 0.35s ease both;
+}
+
+/* ---------- STATS COUNTER ---------- */
+
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- REDUCED MOTION ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
