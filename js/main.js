@@ -159,6 +159,7 @@
     undoBtn:          $("undoBtn"),
     redoBtn:          $("redoBtn"),
     readModeBtn:      $("readModeBtn"),
+    sidebarOverlay:   $("sidebarOverlay"),
     // Quick Note
     quickNoteBar:     $("quickNoteBar"),
     quickListBtn:     $("quickListBtn"),
@@ -1109,11 +1110,11 @@
     /* Sidebar toggle */
     if (els.sidebarToggle && els.sidebar) {
       els.sidebarToggle.addEventListener("click", function () {
-        const isMobile = window.innerWidth <= 860;
+        const isMobile = window.innerWidth <= 920;
 
         if (isMobile) {
-          els.sidebar.classList.toggle("mobile-open");
-          const isOpen = els.sidebar.classList.contains("mobile-open");
+          const isOpen = els.sidebar.classList.toggle("mobile-open");
+          if (els.sidebarOverlay) els.sidebarOverlay.classList.toggle("active", isOpen);
           els.sidebarToggle.setAttribute("aria-expanded", String(isOpen));
         } else {
           sidebarOpen = !sidebarOpen;
@@ -1122,11 +1123,21 @@
         }
       });
 
+      /* Click overlay to close */
+      if (els.sidebarOverlay) {
+        els.sidebarOverlay.addEventListener("click", function() {
+          els.sidebar.classList.remove("mobile-open");
+          els.sidebarOverlay.classList.remove("active");
+          els.sidebarToggle.setAttribute("aria-expanded", "false");
+        });
+      }
+
       /* Mobile: close sidebar on category click */
       document.querySelectorAll(".cat-btn").forEach(function (btn) {
         btn.addEventListener("click", function () {
-          if (window.innerWidth <= 860) {
+          if (window.innerWidth <= 920) {
             els.sidebar.classList.remove("mobile-open");
+            if (els.sidebarOverlay) els.sidebarOverlay.classList.remove("active");
           }
         });
       });

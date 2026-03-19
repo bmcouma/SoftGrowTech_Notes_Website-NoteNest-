@@ -1419,15 +1419,40 @@ ul, ol { list-style: none; }
 
 /* ---------- RESPONSIVE ---------- */
 
-@media (max-width: 860px) {
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+  z-index: 140;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (max-width: 920px) {
+  .sidebar-toggle {
+    z-index: 200; /* Ensure toggle is above the sliding sidebar */
+    position: relative;
+  }
+
   .sidebar {
     position: fixed;
     top: 0;
     left: 0;
-    height: 100%;
+    height: 100vh;
     transform: translateX(-100%);
-    transition: transform var(--transition);
+    box-shadow: 10px 0 30px rgba(0,0,0,0.3);
     z-index: 150;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .sidebar.mobile-open {
@@ -1435,20 +1460,40 @@ ul, ol { list-style: none; }
   }
 
   .app-shell {
-    width: 100%;
-  }
-
-  .notes-grid {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    width: 100% !important;
+    margin-left: 0 !important;
   }
 
   .topbar {
-    padding: 0 1.2rem;
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 650px) {
+  .quick-note-bar {
+    max-width: 95%;
+    padding: 0.5rem 0.8rem;
+  }
+  
+  .quick-note-placeholder {
+    font-size: 0.88rem;
+  }
+  
+  .pattern-picker {
+    display: none; /* Hide on small screens for space */
   }
 }
 
 @media (max-width: 480px) {
-  .notes-area { padding: 1.2rem; }
-  .notes-grid { grid-template-columns: 1fr; }
-  .editor-modal { max-height: 95vh; border-radius: var(--radius); }
+  .notes-area { padding: 1rem; }
+  .notes-grid { grid-template-columns: 1fr !important; }
+  .editor-modal { width: 95%; max-height: 90vh; }
+  
+  .topbar-title {
+    font-size: 1.1rem;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
