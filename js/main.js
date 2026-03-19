@@ -39,6 +39,51 @@
   let currentTheme    = localStorage.getItem("notenest_theme") || "warm";
   let masterPassword  = localStorage.getItem("notenest_pass") || "";
   let isLocked        = Boolean(masterPassword);
+ 
+  /* --- HistoryStack --- */
+  class HistoryStack {
+    constructor(limit = 50) {
+      this.limit = limit;
+      this.undoStack = [];
+      this.redoStack = [];
+    }
+    push(state) {
+      if (this.undoStack.length > 0) {
+        const last = this.undoStack[this.undoStack.length - 1];
+        if (last.html === state.html && last.title === state.title) return;
+      }
+      this.undoStack.push(state);
+      if (this.undoStack.length > this.limit) this.undoStack.shift();
+      this.redoStack = []; // Clear redo on new action
+      this.updateUI();
+    }
+    undo() {
+      if (this.undoStack.length <= 1) return null;
+      const current = this.undoStack.pop();
+      this.redoStack.push(current);
+      const prev = this.undoStack[this.undoStack.length - 1];
+      this.updateUI();
+      return prev;
+    }
+    redo() {
+      if (this.redoStack.length === 0) return null;
+      const next = this.redoStack.pop();
+      this.undoStack.push(next);
+      this.updateUI();
+      return next;
+    }
+    updateUI() {
+      if (els.undoBtn) els.undoBtn.disabled = (this.undoStack.length <= 1);
+      if (els.redoBtn) els.redoBtn.disabled = (this.redoStack.length === 0);
+    }
+    clear() {
+      this.undoStack = [];
+      this.redoStack = [];
+      this.updateUI();
+    }
+  }
+ 
+  const history = new HistoryStack();
 
   /* ============================================================
      DOM SHORTCUTS
@@ -110,6 +155,10 @@
     confirmDelete:    $("confirmDelete"),
     // Toast
     toastContainer:   $("toastContainer"),
+    // Samsung Pro tools
+    undoBtn:          $("undoBtn"),
+    redoBtn:          $("redoBtn"),
+    readModeBtn:      $("readModeBtn"),
     // Quick Note
     quickNoteBar:     $("quickNoteBar"),
     quickListBtn:     $("quickListBtn"),
@@ -345,9 +394,16 @@
     activeNoteId = noteId || null;
     const note   = noteId ? engine.getById(noteId) : null;
 
+    /* Reset history for this session */
+    history.clear();
+
     /* Populate fields */
     els.editorTitle.value          = note ? note.title    : "";
     els.editorBody.innerHTML       = note ? note.body     : "";
+
+    /* Initial snapshot */
+    takeHistorySnapshot();
+
     els.editorCategory.value       = note ? note.category : "personal";
     els.editorTags.value           = note ? (note.tags || []).join(", ") : "";
     els.editorReminder.value       = note ? (note.reminder || "") : "";
@@ -538,8 +594,9 @@
 
     if (format === "hr") {
       document.execCommand("insertHorizontalRule", false, null);
-      return;
     }
+    
+    takeHistorySnapshot();
   }
  
   /* ============================================================
@@ -711,6 +768,9 @@
     
     // Reset input
     e.target.value = "";
+    
+    /* Snapshot after a short delay for rendering */
+    setTimeout(takeHistorySnapshot, 600);
   }
  
   function insertImageAtCursor(base64, id) {
@@ -887,8 +947,18 @@
       els.imageInput.addEventListener("change", handleImageUpload);
     }
     if (els.insertChecklistBtn) {
-      els.insertChecklistBtn.addEventListener("click", insertChecklist);
+      els.insertChecklistBtn.addEventListener("click", () => {
+        insertChecklist();
+        takeHistorySnapshot();
+      });
     }
+ 
+    /* Undo / Redo */
+    if (els.undoBtn) els.undoBtn.addEventListener("click", () => handleUndo());
+    if (els.redoBtn) els.redoBtn.addEventListener("click", () => handleRedo());
+    
+    /* Read Mode */
+    if (els.readModeBtn) els.readModeBtn.addEventListener("click", toggleReadMode);
  
     /* Quick Note Bar */
     if (els.quickNoteBar) {
@@ -902,6 +972,7 @@
         e.stopPropagation();
         openEditor();
         insertChecklist();
+        takeHistorySnapshot();
       });
     }
     if (els.quickImageBtn) {
@@ -909,6 +980,7 @@
         e.stopPropagation();
         openEditor();
         els.imageInput.click();
+        // snapshot is handled in handleImageUpload
       });
     }
  
@@ -960,8 +1032,21 @@
     }
  
     /* Live editor counts */
+    let snapshotTimer;
     if (els.editorBody) {
-      els.editorBody.addEventListener("input", updateEditorCounts);
+      els.editorBody.addEventListener("input", function() {
+        updateEditorCounts();
+        // Debounce snapshots for typing
+        clearTimeout(snapshotTimer);
+        snapshotTimer = setTimeout(takeHistorySnapshot, 800);
+      });
+    }
+ 
+    if (els.editorTitle) {
+      els.editorTitle.addEventListener("input", function() {
+        clearTimeout(snapshotTimer);
+        snapshotTimer = setTimeout(takeHistorySnapshot, 800);
+      });
     }
 
     /* Category filter */
@@ -1073,8 +1158,62 @@
           openEditor(null);
         }
       }
+
+      /* Undo / Redo Shortcuts */
+      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+        if (els.editorOverlay.classList.contains("open")) {
+          e.preventDefault();
+          handleUndo();
+        }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "y") {
+        if (els.editorOverlay.classList.contains("open")) {
+          e.preventDefault();
+          handleRedo();
+        }
+      }
     });
 
+  }
+
+  /* ============================================================
+     SAMSUNG PRO HELPERS (HISTORY & READ MODE)
+  ============================================================ */
+  
+  function takeHistorySnapshot() {
+    history.push({
+      title: els.editorTitle.value,
+      html: els.editorBody.innerHTML
+    });
+  }
+  
+  function handleUndo() {
+    const state = history.undo();
+    if (state) applyState(state);
+  }
+  
+  function handleRedo() {
+    const state = history.redo();
+    if (state) applyState(state);
+  }
+  
+  function applyState(state) {
+    els.editorTitle.value = state.title;
+    els.editorBody.innerHTML = state.html;
+    updateEditorCounts();
+  }
+  
+  function toggleReadMode() {
+    const modal = document.querySelector(".editor-modal");
+    const isActive = modal.classList.toggle("read-only");
+    els.readModeBtn.classList.toggle("active", isActive);
+    els.editorBody.contentEditable = !isActive;
+    
+    if (isActive) {
+      showToast("Read Mode: Editing disabled", "info");
+    } else {
+      els.editorBody.focus();
+    }
   }
 
   /* ============================================================
