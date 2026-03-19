@@ -25,6 +25,7 @@
  *   pinned:    boolean  — Whether note is starred/pinned
  *   archived:  boolean  — Whether note is archived
  *   color:     string   — Custom hex or class name for note color
+ *   tags:      Array    — List of string tags
  *   createdAt: number   — Unix timestamp (ms)
  *   updatedAt: number   — Unix timestamp (ms)
  *   wordCount: number   — Word count of bodyText
@@ -32,6 +33,7 @@
  * }
  *
  * Dependencies: None. Vanilla JS (ES6+). Uses localStorage for persistence.
+ * IndexedDB is used for storing image blobs (Base64 is still used for small previews).
  */
 
 "use strict";
@@ -53,7 +55,30 @@ class NotesEngine {
   constructor() {
     /** @type {Array} Internal in-memory store */
     this._notes = [];
+    this._db = null;
+    this._initPromise = this._initDb();
     this._load();
+  }
+ 
+  async _initDb() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open("notenest_media", 1);
+      request.onerror = e => reject("DB error: " + e.target.errorCode);
+      request.onsuccess = e => {
+        this._db = e.target.result;
+        resolve();
+      };
+      request.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("images")) {
+          db.createObjectStore("images");
+        }
+      };
+    });
+  }
+ 
+  async ready() {
+    return this._initPromise;
   }
 
   /* ============================================================
@@ -65,7 +90,7 @@ class NotesEngine {
    * @param {{ title, body, bodyText, category, pinned }} data
    * @returns {Object}  The newly created note
    */
-  create({ title = "", body = "", bodyText = "", category = "personal", pinned = false, archived = false, color = "" } = {}) {
+  create({ title = "", body = "", bodyText = "", category = "personal", pinned = false, archived = false, color = "", tags = [] } = {}) {
     this._validateCategory(category);
 
     const now  = Date.now();
@@ -78,6 +103,7 @@ class NotesEngine {
       pinned:    Boolean(pinned),
       archived:  Boolean(archived),
       color:     color,
+      tags:      Array.isArray(tags) ? tags : [],
       createdAt: now,
       updatedAt: now,
       wordCount: this._countWords(bodyText),
@@ -121,7 +147,10 @@ class NotesEngine {
     if (typeof updates.color !== "undefined") {
       note.color = updates.color;
     }
-
+    if (typeof updates.tags !== "undefined") {
+      note.tags = Array.isArray(updates.tags) ? updates.tags : [];
+    }
+ 
     note.updatedAt = Date.now();
     this._notes[idx] = note;
     this._save();
@@ -282,6 +311,7 @@ class NotesEngine {
               pinned:    false,
               archived:  false,
               color:     "",
+              tags:      [],
             }, n);
           });
         }
@@ -352,6 +382,58 @@ class NotesEngine {
     }
 
     return arr;
+  }
+ 
+  /* ============================================================
+     MEDIA — IndexedDB
+  ============================================================ */
+ 
+  async saveImage(id, blob) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this._db.transaction("images", "readwrite");
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject();
+      tx.objectStore("images").put(blob, id);
+    });
+  }
+ 
+  async getImage(id) {
+    await this.ready();
+    return new Promise((resolve, reject) => {
+      const tx = this._db.transaction("images", "readonly");
+      const request = tx.objectStore("images").get(id);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject();
+    });
+  }
+ 
+  /* ============================================================
+     EXPORT / IMPORT
+  ============================================================ */
+ 
+  exportData() {
+    const data = {
+      version: 2,
+      notes: this._notes,
+      exportedAt: Date.now()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    return URL.createObjectURL(blob);
+  }
+ 
+  async importData(jsonString) {
+    try {
+      const data = JSON.parse(jsonString);
+      if (data && Array.isArray(data.notes)) {
+        this._notes = data.notes;
+        this._save();
+        return true;
+      }
+    } catch (e) {
+      console.error("Import failed:", e);
+    }
+    return false;
   }
 
 }

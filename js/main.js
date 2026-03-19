@@ -32,11 +32,13 @@
 
   let engine;
   let activeNoteId   = null;    /* ID of note currently in editor (null = new) */
-  let pendingDeleteId = null;   /* ID pending confirmation delete */
-  let currentCategory = "all";
-  let currentSort     = "newest";
   let currentSearch   = "";
   let sidebarOpen     = true;
+  let selectedNotes   = new Set(); /* For multi-select */
+  let isSelectMode    = false;
+  let currentTheme    = localStorage.getItem("notenest_theme") || "warm";
+  let masterPassword  = localStorage.getItem("notenest_pass") || "";
+  let isLocked        = Boolean(masterPassword);
 
   /* ============================================================
      DOM SHORTCUTS
@@ -68,17 +70,25 @@
     countArchived:    $("countArchived"),
     statTotal:        $("statTotal"),
     statWords:        $("statWords"),
+    // Selection Bar
+    selectionBar:     $("selectionBar"),
+    selectionCount:   $("selectionCount"),
+    cancelSelect:     $("cancelSelect"),
+    bulkDelete:       $("bulkDelete"),
+    bulkArchive:      $("bulkArchive"),
     // Editor
     editorOverlay:    $("editorOverlay"),
     editorTitle:      $("editorTitle"),
     editorBody:       $("editorBody"),
     editorCategory:   $("noteCategory"),
+    editorTags:       $("noteTags"),
     editorClose:      $("editorClose"),
     editorSave:       $("editorSave"),
     editorCancel:     $("editorCancel"),
     editorCharCount:  $("editorCharCount"),
     editorWordCount:  $("editorWordCount"),
     editorTimestamp:  $("editorTimestamp"),
+    editorReminder:   $("noteReminder"),
     pinBtn:           $("pinBtn"),
     archiveBtn:       $("archiveBtn"),
     deleteEditorBtn:  $("deleteEditorBtn"),
@@ -87,6 +97,13 @@
     imageInput:       $("imageInput"),
     insertChecklistBtn: $("insertChecklistBtn"),
     colorPicker:      $("colorPicker"),
+    // Settings
+    settingsBtn:      $("settingsBtn"),
+    settingsOverlay:  $("settingsOverlay"),
+    themeToggle:      $("themeToggle"),
+    exportJson:       $("exportJson"),
+    importFile:       $("importFile"),
+    importBtn:        $("importBtn"),
     // Confirm
     confirmOverlay:   $("confirmOverlay"),
     confirmCancel:    $("confirmCancel"),
@@ -106,44 +123,55 @@
     }
 
     engine = new NotesEngine();
-
+    applyTheme(currentTheme);
+    if (isLocked) promptPassword();
+ 
     /* Seed example notes on first launch */
     if (engine.getTotal() === 0) seedExamples();
 
     bindEvents();
     render();
+    setInterval(checkReminders, 60 * 1000); // Check reminders every minute
 
     console.info("[NoteNest] Initialised. Notes:", engine.getTotal());
   }
 
   /* ============================================================
      SEED EXAMPLES
-  ============================================================ */
-
-  function seedExamples() {
+  ============================================================ */  function seedExamples() {
     engine.create({
-      title:    "Welcome to NoteNest",
-      body:     "<p>Welcome! This is your personal thought space. Create notes, organise them by category, pin the important ones, and search through everything instantly.</p><p><br></p><p>Try creating your first note using the <strong>New Note</strong> button in the sidebar.</p>",
-      bodyText: "Welcome! This is your personal thought space. Create notes, organise them by category, pin the important ones, and search through everything instantly. Try creating your first note using the New Note button in the sidebar.",
+      title:    "✨ Welcome to NoteNest Ultimate",
+      body:     "<p>Welcome to your upgraded thought space! You can now do more than ever:</p><div class=\"checklist-item\" contenteditable=\"false\"><input type=\"checkbox\" class=\"checklist-checkbox\" checked id=\"chk-wel-1\"><label class=\"checklist-text\" for=\"chk-wel-1\" contenteditable=\"true\">Try out the new Themes</label></div><div class=\"checklist-item\" contenteditable=\"false\"><input type=\"checkbox\" class=\"checklist-checkbox\" id=\"chk-wel-2\"><label class=\"checklist-text\" for=\"chk-wel-2\" contenteditable=\"true\">Set a Master Password</label></div><div class=\"checklist-item\" contenteditable=\"false\"><input type=\"checkbox\" class=\"checklist-checkbox\" id=\"chk-wel-3\"><label class=\"checklist-text\" for=\"chk-wel-3\" contenteditable=\"true\">Attach your first image</label></div>",
+      bodyText: "Welcome to your upgraded thought space! Try out Themes, Set a Password, Attach images.",
       category: "personal",
       pinned:   true,
+      color:    "green",
+      tags:     ["welcome", "guide"]
     });
-
+ 
     engine.create({
-      title:    "Project Planning Notes",
-      body:     "<p>Key goals for this quarter:</p><ul><li>Finalise the product roadmap</li><li>Conduct user interviews</li><li>Ship v2.0 by end of month</li></ul><p><br></p><p>Follow up with the design team on Monday.</p>",
-      bodyText: "Key goals for this quarter: Finalise the product roadmap, Conduct user interviews, Ship v2.0 by end of month. Follow up with the design team on Monday.",
+      title:    "🚀 Project NoteNest V2",
+      body:     "<p>Next steps for the ultimate expansion:</p><ul><li>Implement Cloud Sync</li><li>Add Mobile App wrapper</li><li>Multi-user collaboration</li></ul>",
+      bodyText: "Next steps: Cloud Sync, Mobile wrapper, Collaboration.",
       category: "work",
       pinned:   false,
+      color:    "blue",
+      tags:     ["roadmap", "future"]
     });
-
+ 
     engine.create({
-      title:    "Ideas to Explore",
-      body:     "<p>A few things worth investigating when time allows:</p><p><br></p><p>— Build a habit tracker with streak notifications</p><p>— Experiment with Web Components for reusable UI</p><p>— Read more about the compound effect principle</p>",
-      bodyText: "A few things worth investigating when time allows: Build a habit tracker with streak notifications, Experiment with Web Components for reusable UI, Read more about the compound effect principle.",
+      title:    "💡 Brilliant App Idea",
+      body:     "<p>What if there was an app that could...</p><p>Wait, I'm already using it! NoteNest is exactly what I needed.</p>",
+      bodyText: "NoteNest is exactly what I needed.",
       category: "ideas",
       pinned:   false,
+      color:    "yellow",
+      tags:     ["app", "meta"]
     });
+ 
+    render();
+    updateCounts();
+    showToast("Example notes restored.", "info");
   }
 
   /* ============================================================
@@ -201,10 +229,17 @@
     card.dataset.id   = note.id;
     card.dataset.category = note.category;
     if (note.color) card.classList.add("color-" + note.color);
+    if (selectedNotes.has(note.id)) card.classList.add("selected");
     card.setAttribute("role", "listitem");
     card.setAttribute("tabindex", "0");
     card.setAttribute("aria-label", note.title || "Untitled note");
     card.style.animationDelay = (index * 45) + "ms";
+ 
+    /* Checkbox overlay for select mode */
+    const selOverlay = document.createElement("div");
+    selOverlay.className = "card-selection-overlay";
+    selOverlay.innerHTML = '<span class="selection-indicator"></span>';
+    card.appendChild(selOverlay);
 
     /* Category dot */
     const dot = document.createElement("span");
@@ -270,12 +305,25 @@
     card.appendChild(body);
     card.appendChild(footer);
 
-    /* Open editor on card click or Enter */
-    card.addEventListener("click", function () { openEditor(note.id); });
+    /* Open editor on card click or Enter (unless in select mode) */
+    card.addEventListener("click", function (e) { 
+      if (isSelectMode || e.ctrlKey || e.metaKey) {
+        toggleNoteSelection(note.id);
+      } else {
+        openEditor(note.id); 
+      }
+    });
+    
+    card.addEventListener("contextmenu", function(e) {
+      e.preventDefault();
+      toggleNoteSelection(note.id);
+    });
+ 
     card.addEventListener("keydown", function (e) {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        openEditor(note.id);
+        if (isSelectMode) toggleNoteSelection(note.id);
+        else openEditor(note.id);
       }
     });
 
@@ -294,6 +342,8 @@
     els.editorTitle.value          = note ? note.title    : "";
     els.editorBody.innerHTML       = note ? note.body     : "";
     els.editorCategory.value       = note ? note.category : "personal";
+    els.editorTags.value           = note ? (note.tags || []).join(", ") : "";
+    els.editorReminder.value       = note ? (note.reminder || "") : "";
 
     /* Pin button state */
     const isPinned = note ? note.pinned : false;
@@ -353,6 +403,8 @@
     const body     = els.editorBody.innerHTML;
     const bodyText = els.editorBody.innerText || els.editorBody.textContent || "";
     const category = els.editorCategory.value;
+    const tags     = els.editorTags.value.split(",").map(s => s.trim()).filter(Boolean);
+    const reminder = els.editorReminder.value;
     const pinned   = els.pinBtn.classList.contains("pinned");
     const archived = els.archiveBtn.classList.contains("archived");
     const color    = els.colorPicker.querySelector(".color-dot.active").dataset.color;
@@ -362,12 +414,12 @@
       els.editorTitle.focus();
       return;
     }
-
+ 
     if (activeNoteId) {
-      engine.update(activeNoteId, { title, body, bodyText, category, pinned, archived, color });
+      engine.update(activeNoteId, { title, body, bodyText, category, tags, reminder, pinned, archived, color });
       showToast("Note updated.", "success");
     } else {
-      engine.create({ title, body, bodyText, category, pinned, archived, color });
+      engine.create({ title, body, bodyText, category, tags, reminder, pinned, archived, color });
       showToast("Note saved.", "success");
     }
 
@@ -483,6 +535,149 @@
   }
  
   /* ============================================================
+     PRIVACY / LOCK
+  ============================================================ */
+ 
+  function promptPassword() {
+    const entry = prompt("Enter Master Password to unlock NoteNest:");
+    if (entry === masterPassword) {
+      isLocked = false;
+      showToast("App unlocked.", "success");
+    } else {
+      alert("Incorrect password. Access denied.");
+      document.body.innerHTML = '<div style="display:flex; height:100vh; align-items:center; justify-content:center; flex-direction:column; background:var(--clr-base); color:var(--clr-text)"><h1>🔒 Locked</h1><button onclick="location.reload()">Try Again</button></div>';
+    }
+  }
+ 
+  function setMasterPassword(newPass) {
+    masterPassword = newPass;
+    localStorage.setItem("notenest_pass", newPass);
+    showToast(newPass ? "Master Password set." : "Master Password removed.", "info");
+  }
+ 
+  /* ============================================================
+     REMINDERS
+  ============================================================ */
+ 
+  function checkReminders() {
+    const now = new Date().toISOString();
+    const notesWithReminders = engine.query({ archived: false }).filter(n => n.reminder && !n.reminderFired);
+    
+    notesWithReminders.forEach(note => {
+      if (note.reminder <= now) {
+        showToast(`🔔 Reminder: ${note.title || "Untitled note"}`, "success");
+        engine.update(note.id, { reminderFired: true });
+        
+        /* Optional: Browser notification */
+        if (Notification.permission === "granted") {
+          new Notification("NoteNest Reminder", {
+            body: note.title || "Untitled note",
+            icon: "favicon.ico"
+          });
+        } else if (Notification.permission !== "denied") {
+          Notification.requestPermission();
+        }
+      }
+    });
+  }
+ 
+  /* ============================================================
+     SELECTION MODE
+  ============================================================ */
+ 
+  function toggleNoteSelection(id) {
+    if (selectedNotes.has(id)) {
+      selectedNotes.delete(id);
+    } else {
+      selectedNotes.add(id);
+    }
+ 
+    isSelectMode = selectedNotes.size > 0;
+    updateSelectionUI();
+    render();
+  }
+ 
+  function updateSelectionUI() {
+    if (isSelectMode) {
+      els.selectionBar.classList.add("open");
+      els.selectionCount.textContent = selectedNotes.size + " selected";
+    } else {
+      els.selectionBar.classList.remove("open");
+      selectedNotes.clear();
+    }
+  }
+ 
+  function cancelSelection() {
+    isSelectMode = false;
+    selectedNotes.clear();
+    updateSelectionUI();
+    render();
+  }
+ 
+  function bulkArchive() {
+    selectedNotes.forEach(id => {
+      engine.update(id, { archived: true });
+    });
+    showToast(`${selectedNotes.size} notes archived.`, "info");
+    cancelSelection();
+  }
+ 
+  function bulkDelete() {
+    if (confirm(`Delete ${selectedNotes.size} notes permanently?`)) {
+      selectedNotes.forEach(id => {
+        engine.delete(id);
+      });
+      showToast(`${selectedNotes.size} notes deleted.`, "info");
+      cancelSelection();
+    }
+  }
+ 
+  /* ============================================================
+     SETTINGS & THEME
+  ============================================================ */
+ 
+  function openSettings() {
+    els.settingsOverlay.classList.add("open");
+    els.themeToggle.value = currentTheme;
+  }
+ 
+  function closeSettings() {
+    els.settingsOverlay.classList.remove("open");
+  }
+ 
+  function applyTheme(theme) {
+    currentTheme = theme;
+    document.body.className = "theme-" + theme;
+    localStorage.setItem("notenest_theme", theme);
+  }
+ 
+  function handleExport() {
+    const url = engine.exportData();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "notenest_backup.json";
+    a.click();
+    showToast("Exporting data...", "info");
+  }
+ 
+  function handleImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(evt) {
+      const success = await engine.importData(evt.target.result);
+      if (success) {
+        showToast("Data imported successfully!", "success");
+        render();
+        closeSettings();
+      } else {
+        showToast("Import failed. Check file format.", "error");
+      }
+    };
+    reader.readAsText(file);
+  }
+ 
+  /* ============================================================
      IMAGE HANDLING
   ============================================================ */
  
@@ -496,9 +691,13 @@
     }
  
     const reader = new FileReader();
-    reader.onload = function(event) {
+    reader.onload = async function(event) {
       const base64 = event.target.result;
-      insertImageAtCursor(base64);
+      /* Store blob in IndexedDB for the full image */
+      const imageId = "img-" + Date.now();
+      await engine.saveImage(imageId, file);
+      
+      insertImageAtCursor(base64, imageId);
     };
     reader.readAsDataURL(file);
     
@@ -506,9 +705,9 @@
     e.target.value = "";
   }
  
-  function insertImageAtCursor(base64) {
+  function insertImageAtCursor(base64, id) {
     els.editorBody.focus();
-    const img = `<img src="${base64}" alt="Note image" style="max-width:100%; border-radius:8px; margin: 8px 0;">`;
+    const img = `<img src="${base64}" data-id="${id}" alt="Note image" style="max-width:100%; border-radius:8px; margin: 8px 0;">`;
     document.execCommand("insertHTML", false, img);
     updateEditorCounts();
   }
@@ -686,6 +885,36 @@
     if (els.deleteEditorBtn) {
       els.deleteEditorBtn.addEventListener("click", function () {
         if (activeNoteId) openConfirmDelete(activeNoteId);
+      });
+    }
+ 
+    /* Selection Bar Actions */
+    if (els.cancelSelect) els.cancelSelect.addEventListener("click", cancelSelection);
+    if (els.bulkArchive)  els.bulkArchive.addEventListener("click",  bulkArchive);
+    if (els.bulkDelete)   els.bulkDelete.addEventListener("click",   bulkDelete);
+ 
+    /* Settings */
+    if (els.settingsBtn)  els.settingsBtn.addEventListener("click",  openSettings);
+    if (els.themeToggle)  els.themeToggle.addEventListener("change", (e) => applyTheme(e.target.value));
+ 
+    /* Password */
+    const passInput = document.getElementById("masterPassInput");
+    if (passInput) {
+      passInput.value = masterPassword;
+      passInput.addEventListener("change", (e) => setMasterPassword(e.target.value));
+    }
+ 
+    if (els.exportJson)   els.exportJson.addEventListener("click",   handleExport);
+    if (els.importBtn)    els.importBtn.addEventListener("click",    () => els.importFile.click());
+    if (els.importFile)   els.importFile.addEventListener("change",  handleImport);
+    
+    /* Restore Examples */
+    const restoreBtn = $("restoreExamplesBtn");
+    if (restoreBtn) restoreBtn.addEventListener("click", seedExamples);
+ 
+    if (els.settingsOverlay) {
+      els.settingsOverlay.addEventListener("click", e => {
+        if (e.target === els.settingsOverlay) closeSettings();
       });
     }
  

@@ -205,6 +205,12 @@
       <h1 class="topbar-title" id="topbarTitle">All Notes</h1>
       <div class="topbar-actions">
         <span class="results-count" id="resultsCount" aria-live="polite"></span>
+        <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
         <button class="icon-btn topbar-new" id="topbarNewBtn" aria-label="Create new note" title="New Note">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
             <path d="M12 20h9" stroke-linecap="round"/>
@@ -243,6 +249,29 @@
         <p class="empty-sub" id="emptySubtitle">Create your first note to get started.</p>
         <button class="btn-empty-create" id="emptyCreateBtn" type="button">Create a Note</button>
       </div>
+ 
+      <!-- Selection Bar -->
+      <div class="selection-bar" id="selectionBar">
+        <div class="selection-info">
+          <button class="icon-btn cancel-btn" id="cancelSelect" aria-label="Cancel selection">✕</button>
+          <span id="selectionCount">0 selected</span>
+        </div>
+        <div class="selection-actions">
+          <button class="icon-btn" id="bulkArchive" title="Archive selected">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <polyline points="21 8 21 21 3 21 3 8"></polyline>
+              <rect x="1" y="3" width="22" height="5"></rect>
+              <line x1="10" y1="12" x2="14" y2="12"></line>
+            </svg>
+          </button>
+          <button class="icon-btn danger" id="bulkDelete" title="Delete selected">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
 
     </main>
 
@@ -272,6 +301,9 @@
             <option value="ideas">Ideas</option>
           </select>
           <span class="select-arrow" aria-hidden="true">&#8964;</span>
+        </div>
+        <div class="editor-tags-wrap">
+          <input type="text" id="noteTags" class="tags-input" placeholder="Tags (comma separated)..." aria-label="Tags" />
         </div>
         <div class="editor-header-actions">
           <button class="icon-btn pin-btn" id="pinBtn" aria-label="Pin note" aria-pressed="false" title="Pin">
@@ -384,12 +416,19 @@
         </div>
         <div class="editor-tools">
           <div class="color-picker" id="colorPicker" role="radiogroup" aria-label="Note color">
-            <button class="color-dot active" data-color=""      title="Default" aria-checked="true"></button>
-            <button class="color-dot" data-color="yellow"  title="Yellow"  aria-checked="false"></button>
-            <button class="color-dot" data-color="blue"    title="Blue"    aria-checked="false"></button>
-            <button class="color-dot" data-color="green"   title="Green"   aria-checked="false"></button>
-            <button class="color-dot" data-color="purple"  title="Purple"  aria-checked="false"></button>
-            <button class="color-dot" data-color="red"     title="Red"     aria-checked="false"></button>
+            <button class="color-dot active" data-color="" style="background: var(--clr-surface)" aria-checked="true" aria-label="Default color"></button>
+            <button class="color-dot" data-color="yellow" style="background: #fff4d1" aria-checked="false" aria-label="Yellow"></button>
+            <button class="color-dot" data-color="blue" style="background: #d1f4ff" aria-checked="false" aria-label="Blue"></button>
+            <button class="color-dot" data-color="green" style="background: #d1ffd1" aria-checked="false" aria-label="Green"></button>
+            <button class="color-dot" data-color="purple" style="background: #f4d1ff" aria-checked="false" aria-label="Purple"></button>
+            <button class="color-dot" data-color="red" style="background: #ffd1d1" aria-checked="false" aria-label="Red"></button>
+          </div>
+          <div class="reminder-wrap" title="Set Reminder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <input type="datetime-local" id="noteReminder" class="reminder-input" />
           </div>
         </div>
         <div class="editor-save-row">
@@ -426,6 +465,47 @@
   <!-- ============================================================
        TOAST NOTIFICATION
   ============================================================ -->
+  <!-- ============================================================
+       SETTINGS MODAL
+  ============================================================ -->
+  <div class="modal-overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="settings-modal editor-modal">
+      <div class="editor-header">
+        <h2 class="confirm-title" style="margin:0">Settings</h2>
+        <button class="icon-btn close-btn" onclick="document.getElementById('settingsOverlay').classList.remove('open')">✕</button>
+      </div>
+      <div class="settings-body" style="padding: 1.5rem">
+        <div class="setting-item">
+          <label for="themeToggle">Theme</label>
+          <select id="themeToggle" class="category-select">
+            <option value="warm">Modern Warm</option>
+            <option value="light">Classic Light</option>
+            <option value="dark">Deep Night</option>
+          </select>
+        </div>
+        <div class="setting-divider"></div>
+        <div class="setting-item">
+          <label for="masterPassInput">Master Password (Lock)</label>
+          <input type="password" id="masterPassInput" class="tags-input" placeholder="Leave empty to disable..." style="font-size:0.9rem" />
+        </div>
+        <div class="setting-divider"></div>
+        <div class="setting-item">
+          <p>Backup & Portability</p>
+          <div class="setting-actions" style="display:flex; gap:1rem; margin-top:0.5rem">
+            <button class="btn-save" id="exportJson" style="font-size:0.8rem">Export Backup</button>
+            <button class="btn-cancel" id="importBtn" style="font-size:0.8rem">Import Backup</button>
+            <input type="file" id="importFile" accept=".json" hidden />
+          </div>
+        </div>
+        <div class="setting-divider"></div>
+        <div class="setting-item">
+          <p>Onboarding</p>
+          <button class="btn-empty-create" id="restoreExamplesBtn" style="font-size:0.8rem; padding: 0.5rem 1rem; width: auto; margin-top: 0.5rem">Restore Example Notes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
   <div class="toast-container" id="toastContainer" aria-live="assertive" aria-atomic="true"></div>
 
   <script src="js/notes.js"></script>

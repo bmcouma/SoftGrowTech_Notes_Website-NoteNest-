@@ -1,6 +1,6 @@
-# 📝 NoteNest — Your Personal Thought Space
+# 📝 NoteNest — Ultimate Edition
 
-NoteNest is a beautifully crafted, fully offline notes application built on vanilla web standards. It combines the warmth of a handwritten notebook with the precision of a professional digital tool — no frameworks, no dependencies, just clean HTML, CSS, and JavaScript.
+NoteNest is a beautifully crafted, fully offline notes application built on vanilla web standards. This **Ultimate Edition** transforms it into a professional-grade personal information manager with high-capacity storage, privacy locks, and advanced organization.
 
 > Capture ideas. Stay organised. Think clearly.
 
@@ -12,34 +12,26 @@ Open `index.html` directly in any modern browser. No server required.
 
 ---
 
-## ✨ Features
-
-### Core (as required)
-- **Create notes** with a title and rich body content
-- **Display notes** in a responsive masonry-style grid
-- **Delete notes** with a confirmation dialog before removal
-- **Persist notes** via `localStorage` — your notes survive browser restarts
-
-### Beyond Requirements
+### 🚀 Ultimate Edition Features
+- **📂 High-Capacity Storage** — Image attachments stored via `IndexedDB` (no 5MB limit)
+- **🛡️ Master Password** — Secure your entire app with a privacy lock screen
+- **🌗 Pro Themes** — Switch between Modern Warm, Classic Light, and Deep Night
+- **🏷️ Multi-Tagging** — Add multiple searchable tags to any note
+- **🔔 Smart Reminders** — Set datetime reminders with live browser notifications
+- **🧹 Multi-Selection** — Batch archive or delete notes via a selection overlay
+- **💾 Full Portability** — Export your data to JSON and import it on any device
 - **Edit existing notes** — re-open any card to update it
 - **Pin notes** — star important notes for quick access
-- **Image support** — insert images directly into your notes
 - **Interactive checklists** — add to-do items with checkboxes
-- **Custom note colors** — choose from a warm palette for each note
+- **Custom note colors** — choose from a vibrant palette for each note
 - **Archive system** — move old notes to a dedicated archive section
 - **Category system** — Personal, Work, Ideas with colour-coded cards
-- **Full-text search** — debounced live search across title and body
+- **Full-text search** — live search across title, body, and tags
 - **Sort modes** — Newest, Oldest, Pinned First
-- **Formatting toolbar** — Bold, Italic, Underline, Bullet list, Divider via `execCommand`
-- **Live word and character count** in the editor
-- **Sidebar stats** — total note count and total word count
-- **Category badge counts** — live counts on each sidebar filter (including Archived)
-- **Empty state** — context-aware messages per filter/search (Fixed visibility)
-- **Toast notifications** — non-blocking feedback for save, delete, pin, archive actions
-- **Three seeded example notes** on first launch
-- **Keyboard shortcuts:** `Ctrl+S` save, `Ctrl+N` new note, `Esc` close modal
-- **Sidebar toggle** — collapse on desktop, overlay on mobile
-- **Timestamps** — relative dates ("2h ago", "3d ago") per card
+- **Formatting toolbar** — Bold, Italic, Underline, Bullet list, Divider
+- **Live word count** and relative timestamps ("2h ago")
+- **Sidebar stats** and category badge counts
+- **Keyboard shortcuts:** `Ctrl+S` save, `Ctrl+N` new note, `Esc` close
 
 ---
 
@@ -50,7 +42,8 @@ Open `index.html` directly in any modern browser. No server required.
 | **HTML5** | Semantic structure, ARIA roles, contenteditable editor |
 | **CSS3** | Full design system, CSS variables, Grid, Flexbox, animations |
 | **Vanilla JavaScript (ES6+)** | OOP notes engine, localStorage, DOM rendering |
-| **Google Fonts** | Playfair Display (headings) · Lora (note body) · Inter (UI) |
+| **IndexedDB API** | High-capacity storage for media blobs |
+| **Google Fonts** | Playfair Display · Lora · Inter |
 | **Web Crypto API** | Cryptographically random note IDs |
 
 ---

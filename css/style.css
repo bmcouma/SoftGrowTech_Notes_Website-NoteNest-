@@ -130,6 +130,30 @@ ul, ol { list-style: none; }
  
 [hidden] { display: none !important; }
  
+.theme-light {
+   --clr-base:       #ffffff;
+   --clr-surface:    #f1f3f4;
+   --clr-surface-2:  #e8eaed;
+   --clr-text:       #202124;
+   --clr-text-muted: #5f6368;
+   --clr-border:     rgba(0,0,0,0.12);
+   --clr-sidebar:    #ffffff;
+   --clr-accent:     #1a73e8;
+   --clr-accent-dim: rgba(26, 115, 232, 0.1);
+ }
+ 
+ .theme-dark {
+   --clr-base:       #202124;
+   --clr-surface:    #2d2e30;
+   --clr-surface-2:  #3c4043;
+   --clr-text:       #e8eaed;
+   --clr-text-muted: #bdc1c6;
+   --clr-border:     rgba(255,255,255,0.1);
+   --clr-sidebar:    #202124;
+   --clr-accent:     #8ab4f8;
+   --clr-accent-dim: rgba(138, 180, 248, 0.1);
+ }
+
 /* ---------- SCREEN READER ONLY ---------- */
 
 .sr-only {
@@ -580,7 +604,7 @@ ul, ol { list-style: none; }
 
 .note-card[data-category="personal"] .card-category-dot { background: var(--cat-personal); }
 .note-card[data-category="work"]     .card-category-dot { background: var(--cat-work); }
-.note-card[data-category="ideas"]    .card-category-dot { background: var(--cat-ideas); }
+.note-card[data-category="ideas"]    { background: var(--cat-ideas); }
 
 .card-title {
   font-family: var(--ff-display);
@@ -649,6 +673,65 @@ ul, ol { list-style: none; }
   background: var(--clr-danger-dim);
   color: var(--clr-danger);
 }
+
+/* Selection Overlays */
+.note-card.selected {
+  outline: 2px solid var(--clr-accent);
+  outline-offset: 2px;
+}
+
+.card-selection-overlay {
+  position: absolute;
+  top: 0.8rem;
+  left: 0.8rem;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.note-card:hover .card-selection-overlay,
+.note-card.selected .card-selection-overlay { opacity: 1; }
+
+.selection-indicator {
+  display: block;
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  border: 2px solid var(--clr-accent);
+  background: var(--clr-surface);
+}
+
+.note-card.selected .selection-indicator {
+  background: var(--clr-accent);
+}
+.note-card.selected .selection-indicator::after {
+  content: '✓';
+  display: block;
+  color: white;
+  font-size: 12px;
+  text-align: center;
+  line-height:14px;
+}
+
+/* Selection Bar */
+.selection-bar {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(150%);
+  background: var(--clr-sidebar);
+  border-radius: var(--radius-lg);
+  padding: 0.8rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.selection-bar.open { transform: translateX(-50%) translateY(0); }
+.selection-info { display: flex; align-items: center; gap: 0.8rem; color: white; font-size: 0.9rem; }
+.selection-actions { display: flex; gap: 0.5rem; }
 
 /* ---------- EMPTY STATE ---------- */
 
@@ -742,9 +825,20 @@ ul, ol { list-style: none; }
 .editor-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 1rem;
   padding: 1rem 1.2rem 0.75rem;
   border-bottom: 1px solid var(--clr-border);
+}
+
+.editor-tags-wrap { flex: 1; }
+.tags-input {
+  width: 100%;
+  background: var(--clr-surface-2);
+  border: 1px solid var(--clr-border-2);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  outline: none;
 }
 
 .editor-category-wrap {
@@ -983,14 +1077,32 @@ ul, ol { list-style: none; }
 /* Editor footer */
 
 .editor-footer {
-  padding: 0.85rem 1.2rem;
-  border-top: 1px solid var(--clr-border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   padding: 0.75rem 1.2rem 1rem;
+   gap: 1.5rem;
+   flex-wrap: wrap;
+ }
+ 
+ .reminder-wrap {
+   display: flex;
+   align-items: center;
+   gap: 0.5rem;
+   background: var(--clr-surface-2);
+   padding: 0.3rem 0.6rem;
+   border-radius: var(--radius-sm);
+   font-size: 0.8rem;
+   color: var(--clr-text-muted);
+ }
+ 
+ .reminder-input {
+   background: transparent;
+   border: none;
+   color: inherit;
+   font-size: inherit;
+   outline: none;
+ }
 
 .editor-meta {
   display: flex;
