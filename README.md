@@ -18,6 +18,9 @@ Open `index.html` directly in any modern browser. No server required.
 - **🌗 Pro Themes** — Switch between Modern Warm, Classic Light, and Deep Night
 - **🏷️ Multi-Tagging** — Add multiple searchable tags to any note
 - **🔔 Smart Reminders** — Set datetime reminders with live browser notifications
+- **⚡ Quick Note Entry** — Rapidly capture thoughts via the "Take a note..." dashboard bar
+- **🎨 Note Patterns** — Choose from 5 premium background patterns (Dots, Stripes, Waves, etc.)
+- **🖼️ Dashboard Texture** — A subtle dot-grid background that eliminates "dead white space"
 - **🧹 Multi-Selection** — Batch archive or delete notes via a selection overlay
 - **💾 Full Portability** — Export your data to JSON and import it on any device
 - **Edit existing notes** — re-open any card to update it

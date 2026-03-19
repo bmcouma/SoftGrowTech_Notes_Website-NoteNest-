@@ -110,6 +110,12 @@
     confirmDelete:    $("confirmDelete"),
     // Toast
     toastContainer:   $("toastContainer"),
+    // Quick Note
+    quickNoteBar:     $("quickNoteBar"),
+    quickListBtn:     $("quickListBtn"),
+    quickImageBtn:    $("quickImageBtn"),
+    // Patterns
+    patternPicker:    $("patternPicker"),
   };
 
   /* ============================================================
@@ -228,7 +234,8 @@
     card.className    = "note-card" + (note.pinned ? " pinned" : "");
     card.dataset.id   = note.id;
     card.dataset.category = note.category;
-    if (note.color) card.classList.add("color-" + note.color);
+    if (note.color)   card.classList.add("color-" + note.color);
+    if (note.pattern) card.dataset.pattern = note.pattern;
     if (selectedNotes.has(note.id)) card.classList.add("selected");
     card.setAttribute("role", "listitem");
     card.setAttribute("tabindex", "0");
@@ -408,6 +415,7 @@
     const pinned   = els.pinBtn.classList.contains("pinned");
     const archived = els.archiveBtn.classList.contains("archived");
     const color    = els.colorPicker.querySelector(".color-dot.active").dataset.color;
+    const pattern  = els.patternPicker.querySelector(".pattern-dot.active").dataset.pattern;
  
     if (!title && !bodyText.trim()) {
       showToast("Please add a title or some content before saving.", "error");
@@ -416,10 +424,10 @@
     }
  
     if (activeNoteId) {
-      engine.update(activeNoteId, { title, body, bodyText, category, tags, reminder, pinned, archived, color });
+      engine.update(activeNoteId, { title, body, bodyText, category, tags, reminder, pinned, archived, color, pattern });
       showToast("Note updated.", "success");
     } else {
-      engine.create({ title, body, bodyText, category, tags, reminder, pinned, archived, color });
+      engine.create({ title, body, bodyText, category, tags, reminder, pinned, archived, color, pattern });
       showToast("Note saved.", "success");
     }
 
@@ -860,6 +868,17 @@
     if (els.pinBtn) els.pinBtn.addEventListener("click", handlePinInEditor);
     if (els.archiveBtn) els.archiveBtn.addEventListener("click", handleArchiveInEditor);
  
+    /* Pattern Picker click */
+    if (els.patternPicker) {
+      const dots = els.patternPicker.querySelectorAll(".pattern-dot");
+      dots.forEach(dot => {
+        dot.addEventListener("click", () => {
+          dots.forEach(d => d.classList.remove("active"));
+          dot.classList.add("active");
+        });
+      });
+    }
+ 
     /* Image and Checklist */
     if (els.insertImageBtn) {
       els.insertImageBtn.addEventListener("click", () => els.imageInput.click());
@@ -869,6 +888,28 @@
     }
     if (els.insertChecklistBtn) {
       els.insertChecklistBtn.addEventListener("click", insertChecklist);
+    }
+ 
+    /* Quick Note Bar */
+    if (els.quickNoteBar) {
+      els.quickNoteBar.addEventListener("click", (e) => {
+        if (e.target.closest(".btn-icon-sm")) return;
+        openEditor();
+      });
+    }
+    if (els.quickListBtn) {
+      els.quickListBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openEditor();
+        insertChecklist();
+      });
+    }
+    if (els.quickImageBtn) {
+      els.quickImageBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openEditor();
+        els.imageInput.click();
+      });
     }
  
     /* Color picker */
